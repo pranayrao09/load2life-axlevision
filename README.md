@@ -228,7 +228,7 @@ Lane Factors (IRC Table 3):
 
 **Developed by:** L&T EDRC CHENNAI - Transportation Infrastructure Division
 
-**Email:** support@lnt-edrc.com
+**Email:** pranay.gade@lntecc.com
 
 **Documentation:** See in-app "Guide" tab for detailed help
 
