@@ -591,7 +591,9 @@ with tab_data:
 # ============================================================================
 
 
-def get_filtered_df():
+def get_filtered_df(key_suffix: str):
+    """Return filtered df plus selected location/direction.
+    key_suffix keeps widget keys unique per tab."""
     df = st.session_state.df_analyzed
     if df is None:
         return None
@@ -601,18 +603,29 @@ def get_filtered_df():
 
     col1, col2 = st.columns(2)
     with col1:
-        loc = st.selectbox("Filter by Location", locations, key="flt_loc")
+        loc = st.selectbox(
+            "Filter by Location",
+            locations,
+            key=f"flt_loc_{key_suffix}",
+        )
     with col2:
         if loc != "ALL":
             dirs = (
                 ["ALL"]
                 + sorted(
-                    df[df["Location Detail"] == loc]["Direction"].dropna().unique().tolist()
+                    df[df["Location Detail"] == loc]["Direction"]
+                    .dropna()
+                    .unique()
+                    .tolist()
                 )
             )
         else:
             dirs = directions_all
-        drn = st.selectbox("Filter by Direction", dirs, key="flt_dir")
+        drn = st.selectbox(
+            "Filter by Direction",
+            dirs,
+            key=f"flt_dir_{key_suffix}",
+        )
 
     if loc != "ALL":
         df = df[df["Location Detail"] == loc]
@@ -635,7 +648,7 @@ with tab_vdf:
             unsafe_allow_html=True,
         )
 
-        df, loc, drn = get_filtered_df()
+        df, loc, drn = get_filtered_df("vdf")
         if df is None or df.empty:
             st.warning("No data after applying filters.")
         else:
@@ -708,7 +721,7 @@ with tab_spectrum:
             unsafe_allow_html=True,
         )
 
-        df, loc, drn = get_filtered_df()
+        df, loc, drn = get_filtered_df("spec")
         if df is None or df.empty:
             st.warning("No data after applying filters.")
         else:
@@ -794,7 +807,7 @@ with tab_pci:
             unsafe_allow_html=True,
         )
 
-        df, loc, drn = get_filtered_df()
+        df, loc, drn = get_filtered_df("pci")
         if df is None or df.empty:
             st.warning("No data after applying filters.")
         else:
@@ -932,3 +945,4 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
+
