@@ -38,69 +38,112 @@ st.markdown("""
         --warning-color: #f97316;
         --danger-color: #dc2626;
     }
-    
+
+    /* Make main area slightly lighter so white text is visible */
     .main {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: radial-gradient(circle at top, #1f2937 0%, #020617 55%, #020617 100%);
         padding: 20px;
+        color: #e5e7eb;
     }
-    
+
+    /* Generic text color override for dark background */
+    body, .main, .stMarkdown, .stText, .stSelectbox, .stSlider, .stDataFrame {
+        color: #e5e7eb !important;
+    }
+
+    /* Metric cards: dark background, bright text */
     .stMetric {
-        background: white;
+        background: #020617;
         padding: 15px;
         border-radius: 10px;
         border-left: 4px solid #667eea;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.8);
+        color: #f9fafb !important;
     }
-    
+    .stMetric > div {
+        color: #f9fafb !important;
+    }
+
+    /* Report header stays bright, but text fully opaque */
     .report-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #0ea5e9 100%);
+        color: #f9fafb;
         padding: 30px;
         border-radius: 15px;
         margin-bottom: 20px;
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 20px 45px rgba(15,23,42,0.9);
     }
-    
+    .report-header h1 {
+        color: #f9fafb;
+    }
+    .report-header p {
+        color: #e5e7eb;
+        opacity: 1.0;
+    }
+
     .section-header {
         border-bottom: 3px solid #667eea;
         padding-bottom: 10px;
         margin: 20px 0 15px 0;
         font-weight: bold;
         font-size: 1.3em;
+        color: #e5e7eb;
     }
-    
+
     .info-box {
-        background: #e0f2fe;
-        border-left: 4px solid #0284c7;
+        background: #0f172a;
+        border-left: 4px solid #38bdf8;
         padding: 15px;
         border-radius: 8px;
         margin: 10px 0;
+        color: #e5e7eb;
     }
-    
+
     .success-box {
-        background: #dcfce7;
+        background: #022c22;
         border-left: 4px solid #22c55e;
         padding: 15px;
         border-radius: 8px;
         margin: 10px 0;
+        color: #bbf7d0;
     }
-    
+
     .warning-box {
-        background: #fef3c7;
-        border-left: 4px solid #f59e0b;
+        background: #451a03;
+        border-left: 4px solid #f97316;
         padding: 15px;
         border-radius: 8px;
         margin: 10px 0;
+        color: #fed7aa;
     }
-    
+
     .data-table {
-        background: white;
+        background: #020617;
         border-radius: 10px;
         padding: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.8);
+        color: #e5e7eb;
+    }
+    .data-table table {
+        color: #e5e7eb;
+    }
+
+    /* Sidebar colors */
+    section[data-testid="stSidebar"] {
+        background: #020617;
+        color: #e5e7eb;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #e5e7eb !important;
+    }
+
+    /* Tabs text color */
+    button[data-baseweb="tab"] > div {
+        color: #e5e7eb !important;
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ============================================================================
 # CONFIGURATION - IRC 37:2018 Standards
