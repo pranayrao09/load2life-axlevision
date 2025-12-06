@@ -556,20 +556,7 @@ with st.sidebar:
     project_location = st.text_input("Project Location", "NH-44, Tamil Nadu")
 
     st.markdown("---")
-    st.markdown("### ⚙️ CONFIGURATION")
-
-    lane_config = st.selectbox(
-        "Lane Configuration",
-        options=["4-lane", "2-lane-single", "6-lane", "8-lane"],
-        index=0,
-    )
-    design_life = st.selectbox("Design Life (years)", [10, 15, 20, 25, 30], index=2)
-    current_age = st.number_input("Current Pavement Age (years)", 0, 50, 0, 1)
-    growth_rate = st.slider(
-        "Annual Traffic Growth (%)", min_value=0.0, max_value=15.0, value=5.0, step=0.5
-    ) / 100.0
-    
-# Build options only if data exists
+    # Build options only if data exists
     if st.session_state.df_analyzed is not None:
         base_df = st.session_state.df_analyzed
         loc_options = ["ALL"] + sorted(
@@ -601,13 +588,24 @@ with st.sidebar:
         st.info("Upload data to enable Location/Direction filters.")
         st.session_state.selected_location = "ALL"
         st.session_state.selected_direction = "ALL"
+    st.markdown("### ⚙️ CONFIGURATION")
+
+    lane_config = st.selectbox(
+        "Lane Configuration",
+        options=["4-lane", "2-lane-single", "6-lane", "8-lane"],
+        index=0,
+    )
+    design_life = st.selectbox("Design Life (years)", [10, 15, 20, 25, 30], index=2)
+    current_age = st.number_input("Current Pavement Age (years)", 0, 50, 0, 1)
+    growth_rate = st.slider(
+        "Annual Traffic Growth (%)", min_value=0.0, max_value=15.0, value=5.0, step=0.5
+    ) / 100.0
         
     st.markdown("### PCI THRESHOLDS")
     maintenance_threshold = st.slider(
         "Maintenance Trigger PCI", 30, 70, 55, step=5
     )
     failure_threshold = st.slider("Failure Threshold PCI", 20, 50, 40, step=5)
-    st.markdown("### 📍 Filters")
 
 
 # ============================================================================
@@ -1057,6 +1055,7 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
+
 
 
 
