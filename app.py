@@ -38,35 +38,37 @@ st.markdown(
         --danger-color: #dc2626;
     }
 
+    /* Keep background close to Streamlit default but with subtle gradient */
     .main {
-        background: radial-gradient(circle at top, #1f2937 0%, #020617 55%, #020617 100%);
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 40%, #d1d5db 100%);
         padding: 20px;
-        color: #e5e7eb;
     }
 
-    body, .main, .stMarkdown, .stText, .stSelectbox, .stSlider, .stDataFrame {
-        color: #e5e7eb !important;
+    /* Let body and base text follow app theme (do not force white) */
+    body, .stMarkdown, .stText, .stSelectbox, .stSlider, .stDataFrame {
+        color: inherit !important;
     }
 
+    /* Metric cards: neutral background, dark text so they work in both themes */
     .stMetric {
-        background: #020617;
+        background: #ffffff;
         padding: 15px;
         border-radius: 10px;
         border-left: 4px solid #667eea;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.8);
-        color: #f9fafb !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        color: #111827 !important;
     }
     .stMetric > div {
-        color: #f9fafb !important;
+        color: #111827 !important;
     }
 
     .report-header {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #0ea5e9 100%);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 45%, #0ea5e9 100%);
         color: #f9fafb;
         padding: 30px;
         border-radius: 15px;
         margin-bottom: 20px;
-        box-shadow: 0 20px 45px rgba(15,23,42,0.9);
+        box-shadow: 0 14px 30px rgba(15,23,42,0.45);
     }
     .report-header h1 {
         color: #f9fafb;
@@ -80,61 +82,62 @@ st.markdown(
         border-bottom: 3px solid #667eea;
         padding-bottom: 10px;
         margin: 20px 0 15px 0;
-        font-weight: bold;
+        font-weight: 600;
         font-size: 1.3em;
-        color: #e5e7eb;
+        color: #111827;
     }
 
     .info-box {
-        background: #0f172a;
-        border-left: 4px solid #38bdf8;
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
         padding: 15px;
         border-radius: 8px;
         margin: 10px 0;
-        color: #e5e7eb;
+        color: #1e3a8a;
     }
 
     .success-box {
-        background: #022c22;
+        background: #ecfdf3;
         border-left: 4px solid #22c55e;
         padding: 15px;
         border-radius: 8px;
         margin: 10px 0;
-        color: #bbf7d0;
+        color: #166534;
     }
 
     .warning-box {
-        background: #451a03;
+        background: #fef3c7;
         border-left: 4px solid #f97316;
         padding: 15px;
         border-radius: 8px;
         margin: 10px 0;
-        color: #fed7aa;
+        color: #92400e;
     }
 
     .data-table {
-        background: #020617;
+        background: #ffffff;
         border-radius: 10px;
         padding: 15px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.8);
-        color: #e5e7eb;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        color: #111827;
     }
 
     section[data-testid="stSidebar"] {
-        background: #020617;
-        color: #e5e7eb;
+        background: #f9fafb;
+        color: #111827;
     }
     section[data-testid="stSidebar"] * {
-        color: #e5e7eb !important;
+        color: #111827 !important;
     }
 
     button[data-baseweb="tab"] > div {
-        color: #e5e7eb !important;
+        color: #111827 !important;
     }
 </style>
 """,
     unsafe_allow_html=True,
 )
+
 
 # ============================================================================
 # CONFIGURATION
@@ -945,5 +948,6 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
+
 
 
