@@ -24,7 +24,7 @@ st.set_page_config(
 )
 
 # ============================================================================
-# THEME / CSS
+# THEME / CSS (neutral dark)
 # ============================================================================
 
 st.markdown(
@@ -38,7 +38,6 @@ st.markdown(
         --danger-color: #dc2626;
     }
 
-    /* Neutral dark grey – not pure black, not bright */
     .main {
         background: #111827;
         padding: 20px;
@@ -49,7 +48,6 @@ st.markdown(
         background-color: #020617;
     }
 
-    /* Let widgets inherit, only enforce contrast where needed */
     .stMarkdown, .stText, .stDataFrame {
         color: #e5e7eb !important;
     }
@@ -135,7 +133,6 @@ st.markdown(
         color: #e5e7eb !important;
     }
 
-    /* Tabs and buttons subtle */
     button[data-baseweb="tab"] > div {
         color: #e5e7eb !important;
     }
@@ -434,8 +431,10 @@ def make_spectrum(values, bin_width, max_val):
                 }
             )
     return pd.DataFrame(rows)
+
+
 def build_pdf_report(project_name, project_location):
-    """Generate PDF report and return it as BytesIO."""
+    """Generate PDF report and return BytesIO."""
     if (
         st.session_state.df_analyzed is None
         or st.session_state.vdf_table is None
@@ -449,8 +448,8 @@ def build_pdf_report(project_name, project_location):
         vdf = st.session_state.vdf_table
         pci_df = st.session_state.pci_timeline
 
-        # --- Page 1: Title & overview ---
-        fig, ax = plt.subplots(figsize=(8.27, 11.69))  # A4 portrait in inches
+        # Page 1: title + overview
+        fig, ax = plt.subplots(figsize=(8.27, 11.69))
         ax.axis("off")
         ax.set_title(
             f"Load2Life-AxleVision\n{project_name}",
@@ -466,17 +465,11 @@ def build_pdf_report(project_name, project_location):
             f"Locations: {df['Location Detail'].nunique()}",
             f"Overloaded vehicles: {(df['OL_Flag']=='OL').sum():,}",
         ]
-        ax.text(
-            0.03,
-            0.8,
-            "\n".join(text_lines),
-            fontsize=11,
-            va="top",
-        )
+        ax.text(0.03, 0.8, "\n".join(text_lines), fontsize=11, va="top")
         pdf.savefig(fig)
         plt.close(fig)
 
-        # --- Page 2: VDF charts ---
+        # Page 2: VDF charts
         fig, axes = plt.subplots(1, 2, figsize=(11.69, 8.27))
         colors = plt.cm.Set3(range(len(vdf)))
         axes[0].pie(
@@ -494,7 +487,7 @@ def build_pdf_report(project_name, project_location):
         pdf.savefig(fig)
         plt.close(fig)
 
-        # --- Page 3: PCI curve ---
+        # Page 3: PCI curve
         fig, ax = plt.subplots(figsize=(11.69, 8.27))
         ax.plot(pci_df["Year"], pci_df["Design PCI"], "-o", label="Design PCI")
         ax.plot(pci_df["Year"], pci_df["Actual PCI"], "-o", label="Actual PCI")
@@ -506,7 +499,7 @@ def build_pdf_report(project_name, project_location):
         pdf.savefig(fig)
         plt.close(fig)
 
-        # --- Page 4: PCI table (every 2 years) ---
+        # Page 4: PCI table (every 2nd year)
         fig, ax = plt.subplots(figsize=(8.27, 11.69))
         ax.axis("off")
         subset = pci_df[pci_df["Year"] % 2 == 0][
@@ -525,6 +518,7 @@ def build_pdf_report(project_name, project_location):
     buf.seek(0)
     return buf
 
+
 # ============================================================================
 # SESSION STATE
 # ============================================================================
@@ -536,6 +530,8 @@ if "df_raw" not in st.session_state:
     st.session_state.spectrum_tables = None
     st.session_state.pci_timeline = None
     st.session_state.key_metrics = {}
+    st.session_state.selected_location = "ALL"
+    st.session_state.selected_direction = "ALL"
 
 # ============================================================================
 # HEADER
@@ -557,7 +553,7 @@ st.markdown(
 )
 
 # ============================================================================
-# SIDEBAR
+# SIDEBAR (includes global filters)
 # ============================================================================
 
 with st.sidebar:
@@ -566,7 +562,27 @@ with st.sidebar:
     project_location = st.text_input("Project Location", "NH-44, Tamil Nadu")
 
     st.markdown("---")
-    # Build options only if data exists
+    st.markdown("### ⚙️ CONFIGURATION")
+
+    lane_config = st.selectbox(
+        "Lane Configuration",
+        options=["4-lane", "2-lane-single", "6-lane", "8-lane"],
+        index=0,
+    )
+    design_life = st.selectbox("Design Life (years)", [10, 15, 20, 25, 30], index=2)
+    current_age = st.number_input("Current Pavement Age (years)", 0, 50, 0, 1)
+    growth_rate = st.slider(
+        "Annual Traffic Growth (%)", min_value=0.0, max_value=15.0, value=5.0, step=0.5
+    ) / 100.0
+
+    st.markdown("### PCI THRESHOLDS")
+    maintenance_threshold = st.slider(
+        "Maintenance Trigger PCI", 30, 70, 55, step=5
+    )
+    failure_threshold = st.slider("Failure Threshold PCI", 20, 50, 40, step=5)
+
+    st.markdown("### 📍 Filters")
+
     if st.session_state.df_analyzed is not None:
         base_df = st.session_state.df_analyzed
         loc_options = ["ALL"] + sorted(
@@ -575,7 +591,8 @@ with st.sidebar:
         st.session_state.selected_location = st.selectbox(
             "Location",
             loc_options,
-            index=0,
+            index=0 if st.session_state.selected_location not in loc_options
+            else loc_options.index(st.session_state.selected_location),
         )
 
         if st.session_state.selected_location != "ALL":
@@ -592,30 +609,31 @@ with st.sidebar:
         st.session_state.selected_direction = st.selectbox(
             "Direction",
             dir_options,
-            index=0,
+            index=0 if st.session_state.selected_direction not in dir_options
+            else dir_options.index(st.session_state.selected_direction),
         )
     else:
         st.info("Upload data to enable Location/Direction filters.")
-        st.session_state.selected_location = "ALL"
-        st.session_state.selected_direction = "ALL"
-    st.markdown("### ⚙️ CONFIGURATION")
 
-    lane_config = st.selectbox(
-        "Lane Configuration",
-        options=["4-lane", "2-lane-single", "6-lane", "8-lane"],
-        index=0,
-    )
-    design_life = st.selectbox("Design Life (years)", [10, 15, 20, 25, 30], index=2)
-    current_age = st.number_input("Current Pavement Age (years)", 0, 50, 0, 1)
-    growth_rate = st.slider(
-        "Annual Traffic Growth (%)", min_value=0.0, max_value=15.0, value=5.0, step=0.5
-    ) / 100.0
-        
-    st.markdown("### PCI THRESHOLDS")
-    maintenance_threshold = st.slider(
-        "Maintenance Trigger PCI", 30, 70, 55, step=5
-    )
-    failure_threshold = st.slider("Failure Threshold PCI", 20, 50, 40, step=5)
+
+# ============================================================================
+# FILTERED DF HELPER
+# ============================================================================
+
+def get_filtered_df():
+    df = st.session_state.df_analyzed
+    if df is None:
+        return None, "ALL", "ALL"
+
+    loc = st.session_state.get("selected_location", "ALL")
+    drn = st.session_state.get("selected_direction", "ALL")
+
+    if loc != "ALL":
+        df = df[df["Location Detail"].astype(str) == str(loc)]
+    if drn != "ALL":
+        df = df[df["Direction"].astype(str) == str(drn)]
+
+    return df.copy(), loc, drn
 
 
 # ============================================================================
@@ -662,33 +680,34 @@ with tab_data:
 
     uploaded = st.file_uploader("Upload Data File", type=["xlsx", "xls", "csv"])
 
-if uploaded is not None:
-    try:
-        if uploaded.size == 0:
-            st.error("Uploaded file is empty.")
-        elif uploaded.name.lower().endswith(".csv"):
-            df = pd.read_csv(uploaded)
-        else:
-            sheets = pd.read_excel(uploaded, sheet_name=None, engine="openpyxl")
-            if not sheets:
-                st.error("No sheets found in Excel file.")
+    if uploaded is not None:
+        try:
+            if uploaded.size == 0:
+                st.error("Uploaded file is empty.")
                 st.stop()
-            chosen_df = None
-            for name, sdf in sheets.items():
-                cols_lower = [str(c).lower() for c in sdf.columns]
-                if any("axle" in c or "weight" in c or "front" in c for c in cols_lower):
-                    chosen_df = sdf
-                    break
-            if chosen_df is None:
-                chosen_df = list(sheets.values())[0]
-            df = chosen_df
 
-        # Normalise columns and compute ESAL
-        df.columns = [str(c).strip() for c in df.columns]
-        st.session_state.df_raw = df.copy()
-        df_analyzed = compute_esal(df)
-        st.session_state.df_analyzed = df_analyzed
-   
+            if uploaded.name.lower().endswith(".csv"):
+                df = pd.read_csv(uploaded)
+            else:
+                sheets = pd.read_excel(uploaded, sheet_name=None, engine="openpyxl")
+                if not sheets:
+                    st.error("No sheets found in Excel file.")
+                    st.stop()
+                chosen_df = None
+                for name, sdf in sheets.items():
+                    cols_lower = [str(c).lower() for c in sdf.columns]
+                    if any("axle" in c or "weight" in c or "front" in c for c in cols_lower):
+                        chosen_df = sdf
+                        break
+                if chosen_df is None:
+                    chosen_df = list(sheets.values())[0]
+                df = chosen_df
+
+            df.columns = [str(c).strip() for c in df.columns]
+            st.session_state.df_raw = df.copy()
+            df_analyzed = compute_esal(df)
+            st.session_state.df_analyzed = df_analyzed
+
             st.success(f"✅ Successfully processed {len(df_analyzed):,} records!")
 
             col1, col2, col3, col4 = st.columns(4)
@@ -724,28 +743,6 @@ if uploaded is not None:
 
         except Exception as e:
             st.error(f"❌ Error processing file: {e}")
-
-# ============================================================================
-# Helper: filtered DF
-# ============================================================================
-
-
-def get_filtered_df():
-    """Return dataframe filtered using global sidebar Location/Direction."""
-    df = st.session_state.df_analyzed
-    if df is None:
-        return None
-
-    loc = st.session_state.get("selected_location", "ALL")
-    drn = st.session_state.get("selected_direction", "ALL")
-
-    if loc != "ALL":
-        df = df[df["Location Detail"].astype(str) == str(loc)]
-    if drn != "ALL":
-        df = df[df["Direction"].astype(str) == str(drn)]
-
-    return df.copy(), loc, drn
-
 
 # ============================================================================
 # TAB: VDF
@@ -1057,8 +1054,8 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
-        st.markdown("### 📄 PDF Report")
 
+        st.markdown("### 📄 PDF Report")
         pdf_buf = build_pdf_report(project_name, project_location)
         if pdf_buf is None:
             st.info("Run VDF and PCI analysis first to enable PDF export.")
@@ -1069,11 +1066,3 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
-
-
-
-
-
-
-
-
