@@ -568,15 +568,8 @@ with st.sidebar:
     growth_rate = st.slider(
         "Annual Traffic Growth (%)", min_value=0.0, max_value=15.0, value=5.0, step=0.5
     ) / 100.0
-
-    st.markdown("### PCI THRESHOLDS")
-    maintenance_threshold = st.slider(
-        "Maintenance Trigger PCI", 30, 70, 55, step=5
-    )
-    failure_threshold = st.slider("Failure Threshold PCI", 20, 50, 40, step=5)
-    st.markdown("### 📍 Filters")
-
-    # Build options only if data exists
+    
+# Build options only if data exists
     if st.session_state.df_analyzed is not None:
         base_df = st.session_state.df_analyzed
         loc_options = ["ALL"] + sorted(
@@ -608,6 +601,13 @@ with st.sidebar:
         st.info("Upload data to enable Location/Direction filters.")
         st.session_state.selected_location = "ALL"
         st.session_state.selected_direction = "ALL"
+        
+    st.markdown("### PCI THRESHOLDS")
+    maintenance_threshold = st.slider(
+        "Maintenance Trigger PCI", 30, 70, 55, step=5
+    )
+    failure_threshold = st.slider("Failure Threshold PCI", 20, 50, 40, step=5)
+    st.markdown("### 📍 Filters")
 
 
 # ============================================================================
@@ -1057,6 +1057,7 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
+
 
 
 
