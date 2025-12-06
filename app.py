@@ -662,29 +662,33 @@ with tab_data:
 
     uploaded = st.file_uploader("Upload Data File", type=["xlsx", "xls", "csv"])
 
-    if uploaded is not None:
-        try:
-            if uploaded.name.endswith(".csv"):
-                df = pd.read_csv(uploaded)
-            else:
-                sheets = pd.read_excel(uploaded, sheet_name=None, engine="openpyxl")
-                chosen_df = None
-                for name, sdf in sheets.items():
-                    cols_lower = [c.lower() for c in sdf.columns.astype(str).tolist()]
-                    if any(
-                        "axle" in c or "weight" in c or "front" in c for c in cols_lower
-                    ):
-                        chosen_df = sdf
-                        break
-                if chosen_df is None:
-                    chosen_df = list(sheets.values())[0]
-                df = chosen_df
+if uploaded is not None:
+    try:
+        if uploaded.size == 0:
+            st.error("Uploaded file is empty.")
+        elif uploaded.name.lower().endswith(".csv"):
+            df = pd.read_csv(uploaded)
+        else:
+            sheets = pd.read_excel(uploaded, sheet_name=None, engine="openpyxl")
+            if not sheets:
+                st.error("No sheets found in Excel file.")
+                st.stop()
+            chosen_df = None
+            for name, sdf in sheets.items():
+                cols_lower = [str(c).lower() for c in sdf.columns]
+                if any("axle" in c or "weight" in c or "front" in c for c in cols_lower):
+                    chosen_df = sdf
+                    break
+            if chosen_df is None:
+                chosen_df = list(sheets.values())[0]
+            df = chosen_df
 
-            df.columns = [str(c).strip() for c in df.columns]
-            st.session_state.df_raw = df.copy()
-            df_analyzed = compute_esal(df)
-            st.session_state.df_analyzed = df_analyzed
-
+        # Normalise columns and compute ESAL
+        df.columns = [str(c).strip() for c in df.columns]
+        st.session_state.df_raw = df.copy()
+        df_analyzed = compute_esal(df)
+        st.session_state.df_analyzed = df_analyzed
+   
             st.success(f"✅ Successfully processed {len(df_analyzed):,} records!")
 
             col1, col2, col3, col4 = st.columns(4)
@@ -1065,6 +1069,7 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
+
 
 
 
