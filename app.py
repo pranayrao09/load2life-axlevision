@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.patches import Rectangle, FancyBboxPatch
 from PIL import Image, ImageDraw, ImageFont
 import openpyxl
 from openpyxl.styles import Font, PatternFill
@@ -411,15 +410,21 @@ def compute_esal(df):
 
 
 def make_spectrum(values, bin_width, max_val):
-    vals = [float(v) for v in values if not pd.isna(v) and v > 0]
-    if not vals:
-        return pd.DataFrame()
+    arr = np.asarray(values, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    arr = arr[arr > 0]
 
-    hist, edges = np.histogram(
-        vals, bins=list(range(0, int(max_val) + bin_width, bin_width))
-    )
-    rows = []
+    if arr.size == 0:
+        return pd.DataFrame(columns=["Range (kN)", "Frequency", "Percentage"])
+
+    use_max = max_val if max_val > arr.max() else int(np.ceil(arr.max() / bin_width) * bin_width)
+    bins = list(range(0, int(use_max) + bin_width, bin_width))
+    if len(bins) < 2:
+        return pd.DataFrame(columns=["Range (kN)", "Frequency", "Percentage"])
+
+    hist, edges = np.histogram(arr, bins=bins)
     total = hist.sum()
+    rows = []
     for i in range(len(hist)):
         if hist[i] > 0:
             rng = f"{int(edges[i])}-{int(edges[i+1])}"
@@ -435,7 +440,6 @@ def make_spectrum(values, bin_width, max_val):
 
 
 def build_pdf_report(project_name, project_location):
-    """Generate PDF report and return BytesIO."""
     if (
         st.session_state.df_analyzed is None
         or st.session_state.vdf_table is None
@@ -449,7 +453,6 @@ def build_pdf_report(project_name, project_location):
         vdf = st.session_state.vdf_table
         pci_df = st.session_state.pci_timeline
 
-        # Page 1: title + overview
         fig, ax = plt.subplots(figsize=(8.27, 11.69))
         ax.axis("off")
         ax.set_title(
@@ -470,7 +473,6 @@ def build_pdf_report(project_name, project_location):
         pdf.savefig(fig)
         plt.close(fig)
 
-        # Page 2: VDF charts
         fig, axes = plt.subplots(1, 2, figsize=(11.69, 8.27))
         colors = plt.cm.Set3(range(len(vdf)))
         axes[0].pie(
@@ -488,7 +490,6 @@ def build_pdf_report(project_name, project_location):
         pdf.savefig(fig)
         plt.close(fig)
 
-        # Page 3: PCI curve
         fig, ax = plt.subplots(figsize=(11.69, 8.27))
         ax.plot(pci_df["Year"], pci_df["Design PCI"], "-o", label="Design PCI")
         ax.plot(pci_df["Year"], pci_df["Actual PCI"], "-o", label="Actual PCI")
@@ -500,7 +501,6 @@ def build_pdf_report(project_name, project_location):
         pdf.savefig(fig)
         plt.close(fig)
 
-        # Page 4: PCI table (every 2nd year)
         fig, ax = plt.subplots(figsize=(8.27, 11.69))
         ax.axis("off")
         subset = pci_df[pci_df["Year"] % 2 == 0][
@@ -554,7 +554,7 @@ st.markdown(
 )
 
 # ============================================================================
-# SIDEBAR (includes global filters)
+# SIDEBAR (global filters + config)
 # ============================================================================
 
 with st.sidebar:
@@ -573,7 +573,8 @@ with st.sidebar:
         st.session_state.selected_location = st.selectbox(
             "Location",
             loc_options,
-            index=0 if st.session_state.selected_location not in loc_options
+            index=0
+            if st.session_state.selected_location not in loc_options
             else loc_options.index(st.session_state.selected_location),
         )
 
@@ -591,11 +592,13 @@ with st.sidebar:
         st.session_state.selected_direction = st.selectbox(
             "Direction",
             dir_options,
-            index=0 if st.session_state.selected_direction not in dir_options
+            index=0
+            if st.session_state.selected_direction not in dir_options
             else dir_options.index(st.session_state.selected_direction),
         )
     else:
         st.info("Upload data to enable Location/Direction filters.")
+
     st.markdown("### ⚙️ CONFIGURATION")
 
     lane_config = st.selectbox(
@@ -615,10 +618,10 @@ with st.sidebar:
     )
     failure_threshold = st.slider("Failure Threshold PCI", 20, 50, 40, step=5)
 
-
 # ============================================================================
 # FILTERED DF HELPER
 # ============================================================================
+
 
 def get_filtered_df():
     df = st.session_state.df_analyzed
@@ -811,12 +814,12 @@ with tab_vdf:
                 startangle=140,
             )
             axes[0].set_title("ESAL Distribution by Vehicle Type")
-            
+
             axes[1].barh(vdf["VehicleType"], vdf["VDF"], color=colors)
             axes[1].set_xlabel("VDF")
             axes[1].set_title(f"VDF by Vehicle Type (Avg: {avg_vdf:.4f})")
             plt.tight_layout()
-            
+
             st.pyplot(fig)
 
 # ============================================================================
@@ -858,6 +861,9 @@ with tab_spectrum:
                 "tridem": tridem_spec,
             }
 
+            if single_spec.empty and tandem_spec.empty and tridem_spec.empty:
+                st.info("No non‑zero axle loads found for the selected filters; spectrum charts may be empty.")
+
             st.subheader("Distribution Tables")
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -872,33 +878,40 @@ with tab_spectrum:
 
             fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
-            axes[0].hist(
-                df[df["Single_kN"] > 0]["Single_kN"].values,
-                bins=20,
-                color="#3b82f6",
-                edgecolor="black",
-                alpha=0.7,
-            )
+            single_vals = df[df["Single_kN"] > 0]["Single_kN"].values
+            tandem_vals = df[df["Tandem_kN"] > 0]["Tandem_kN"].values
+            tridem_vals = df[df["Tridem_kN"] > 0]["Tridem_kN"].values
+
+            if single_vals.size > 0:
+                axes[0].hist(
+                    single_vals,
+                    bins=20,
+                    color="#3b82f6",
+                    edgecolor="black",
+                    alpha=0.7,
+                )
             axes[0].set_title("Single Axle")
             axes[0].grid(alpha=0.3)
 
-            axes[1].hist(
-                df[df["Tandem_kN"] > 0]["Tandem_kN"].values,
-                bins=20,
-                color="#8b5cf6",
-                edgecolor="black",
-                alpha=0.7,
-            )
+            if tandem_vals.size > 0:
+                axes[1].hist(
+                    tandem_vals,
+                    bins=20,
+                    color="#8b5cf6",
+                    edgecolor="black",
+                    alpha=0.7,
+                )
             axes[1].set_title("Tandem Axle")
             axes[1].grid(alpha=0.3)
 
-            axes[2].hist(
-                df[df["Tridem_kN"] > 0]["Tridem_kN"].values,
-                bins=20,
-                color="#ec4899",
-                edgecolor="black",
-                alpha=0.7,
-            )
+            if tridem_vals.size > 0:
+                axes[2].hist(
+                    tridem_vals,
+                    bins=20,
+                    color="#ec4899",
+                    edgecolor="black",
+                    alpha=0.7,
+                )
             axes[2].set_title("Tridem Axle")
             axes[2].grid(alpha=0.3)
 
@@ -1068,5 +1081,3 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
-
-
