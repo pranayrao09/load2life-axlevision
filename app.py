@@ -11,6 +11,7 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.drawing.image import Image as XLImage
 
 import streamlit as st
+st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # ============================================================================
 # PAGE CONFIG
@@ -810,10 +811,12 @@ with tab_vdf:
                 startangle=140,
             )
             axes[0].set_title("ESAL Distribution by Vehicle Type")
+            
             axes[1].barh(vdf["VehicleType"], vdf["VDF"], color=colors)
             axes[1].set_xlabel("VDF")
             axes[1].set_title(f"VDF by Vehicle Type (Avg: {avg_vdf:.4f})")
             plt.tight_layout()
+            
             st.pyplot(fig)
 
 # ============================================================================
@@ -1065,4 +1068,5 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
+
 
