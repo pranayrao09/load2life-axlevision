@@ -443,10 +443,10 @@ st.markdown(
     f"""
 <div class="report-header">
     <h1 style="margin: 0; text-align: center; font-size: 2.6em;">{TITLE}</h1>
-    <p style="text-align: center; margin: 10px 0 0; font-size: 1.05em;">
-        IRC 37:2018 Compliant Axle Load Analysis & Pavement Management System
+    <p style="text-align: center; margin: 10px 0 0; font-size: 0.9em;">
+        Axle Load Analysis & Pavement Management System
     </p>
-    <p style="text-align: center; margin: 5px 0 0; font-size: 0.9em;">
+    <p style="text-align: center; margin: 5px 0 0; font-size: 1.05em;">
         An Inhouse Product developed by L&T EDRC CHENNAI | Transportation Infrastructure
     </p>
 </div>
@@ -945,4 +945,5 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
+
 
