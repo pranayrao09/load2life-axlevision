@@ -10,6 +10,7 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.drawing.image import Image as XLImage
 
 import streamlit as st
+
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # ============================================================================
@@ -1081,3 +1082,4 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
+
