@@ -424,7 +424,96 @@ def make_spectrum(values, bin_width, max_val):
                 }
             )
     return pd.DataFrame(rows)
+def build_pdf_report(project_name, project_location):
+    """Generate PDF report and return it as BytesIO."""
+    if (
+        st.session_state.df_analyzed is None
+        or st.session_state.vdf_table is None
+        or st.session_state.pci_timeline is None
+    ):
+        return None
 
+    buf = io.BytesIO()
+    with PdfPages(buf) as pdf:
+        df = st.session_state.df_analyzed
+        vdf = st.session_state.vdf_table
+        pci_df = st.session_state.pci_timeline
+
+        # --- Page 1: Title & overview ---
+        fig, ax = plt.subplots(figsize=(8.27, 11.69))  # A4 portrait in inches
+        ax.axis("off")
+        ax.set_title(
+            f"Load2Life-AxleVision\n{project_name}",
+            fontsize=18,
+            weight="bold",
+            pad=20,
+        )
+        text_lines = [
+            f"Project Location: {project_location}",
+            "",
+            f"Total records: {len(df):,}",
+            f"Vehicle types: {df['VehicleType'].nunique()}",
+            f"Locations: {df['Location Detail'].nunique()}",
+            f"Overloaded vehicles: {(df['OL_Flag']=='OL').sum():,}",
+        ]
+        ax.text(
+            0.03,
+            0.8,
+            "\n".join(text_lines),
+            fontsize=11,
+            va="top",
+        )
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        # --- Page 2: VDF charts ---
+        fig, axes = plt.subplots(1, 2, figsize=(11.69, 8.27))
+        colors = plt.cm.Set3(range(len(vdf)))
+        axes[0].pie(
+            vdf["Sum_ESAL"],
+            labels=vdf["VehicleType"],
+            autopct="%1.1f%%",
+            colors=colors,
+            startangle=140,
+        )
+        axes[0].set_title("ESAL Distribution by Vehicle Type")
+        axes[1].barh(vdf["VehicleType"], vdf["VDF"], color=colors)
+        axes[1].set_xlabel("VDF")
+        axes[1].set_title("VDF by Vehicle Type")
+        plt.tight_layout()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        # --- Page 3: PCI curve ---
+        fig, ax = plt.subplots(figsize=(11.69, 8.27))
+        ax.plot(pci_df["Year"], pci_df["Design PCI"], "-o", label="Design PCI")
+        ax.plot(pci_df["Year"], pci_df["Actual PCI"], "-o", label="Actual PCI")
+        ax.set_xlabel("Year")
+        ax.set_ylabel("PCI")
+        ax.set_title("PCI Deterioration")
+        ax.grid(alpha=0.3)
+        ax.legend()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        # --- Page 4: PCI table (every 2 years) ---
+        fig, ax = plt.subplots(figsize=(8.27, 11.69))
+        ax.axis("off")
+        subset = pci_df[pci_df["Year"] % 2 == 0][
+            ["Year", "Pavement Age", "Cumulative MSA", "Design PCI", "Actual PCI", "Condition"]
+        ]
+        ax.table(
+            cellText=subset.values,
+            colLabels=subset.columns,
+            loc="center",
+            cellLoc="center",
+        )
+        ax.set_title("PCI Timeline (Every 2 Years)", fontsize=14, pad=20)
+        pdf.savefig(fig)
+        plt.close(fig)
+
+    buf.seek(0)
+    return buf
 
 # ============================================================================
 # SESSION STATE
@@ -485,6 +574,41 @@ with st.sidebar:
         "Maintenance Trigger PCI", 30, 70, 55, step=5
     )
     failure_threshold = st.slider("Failure Threshold PCI", 20, 50, 40, step=5)
+    st.markdown("### 📍 Filters")
+
+    # Build options only if data exists
+    if st.session_state.df_analyzed is not None:
+        base_df = st.session_state.df_analyzed
+        loc_options = ["ALL"] + sorted(
+            base_df["Location Detail"].dropna().astype(str).unique().tolist()
+        )
+        st.session_state.selected_location = st.selectbox(
+            "Location",
+            loc_options,
+            index=0,
+        )
+
+        if st.session_state.selected_location != "ALL":
+            dir_df = base_df[
+                base_df["Location Detail"].astype(str)
+                == st.session_state.selected_location
+            ]
+        else:
+            dir_df = base_df
+
+        dir_options = ["ALL"] + sorted(
+            dir_df["Direction"].dropna().astype(str).unique().tolist()
+        )
+        st.session_state.selected_direction = st.selectbox(
+            "Direction",
+            dir_options,
+            index=0,
+        )
+    else:
+        st.info("Upload data to enable Location/Direction filters.")
+        st.session_state.selected_location = "ALL"
+        st.session_state.selected_direction = "ALL"
+
 
 # ============================================================================
 # TABS
@@ -594,46 +718,19 @@ with tab_data:
 # ============================================================================
 
 
-def get_filtered_df(key_suffix: str):
-    """Return filtered df plus selected location/direction.
-    key_suffix keeps widget keys unique per tab."""
+def get_filtered_df():
+    """Return dataframe filtered using global sidebar Location/Direction."""
     df = st.session_state.df_analyzed
     if df is None:
         return None
 
-    locations = ["ALL"] + sorted(df["Location Detail"].dropna().unique().tolist())
-    directions_all = ["ALL"] + sorted(df["Direction"].dropna().unique().tolist())
-
-    col1, col2 = st.columns(2)
-    with col1:
-        loc = st.selectbox(
-            "Filter by Location",
-            locations,
-            key=f"flt_loc_{key_suffix}",
-        )
-    with col2:
-        if loc != "ALL":
-            dirs = (
-                ["ALL"]
-                + sorted(
-                    df[df["Location Detail"] == loc]["Direction"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                )
-            )
-        else:
-            dirs = directions_all
-        drn = st.selectbox(
-            "Filter by Direction",
-            dirs,
-            key=f"flt_dir_{key_suffix}",
-        )
+    loc = st.session_state.get("selected_location", "ALL")
+    drn = st.session_state.get("selected_direction", "ALL")
 
     if loc != "ALL":
-        df = df[df["Location Detail"] == loc]
+        df = df[df["Location Detail"].astype(str) == str(loc)]
     if drn != "ALL":
-        df = df[df["Direction"] == drn]
+        df = df[df["Direction"].astype(str) == str(drn)]
 
     return df.copy(), loc, drn
 
@@ -651,7 +748,7 @@ with tab_vdf:
             unsafe_allow_html=True,
         )
 
-        df, loc, drn = get_filtered_df("vdf")
+        df, loc, drn = get_filtered_df()
         if df is None or df.empty:
             st.warning("No data after applying filters.")
         else:
@@ -724,7 +821,7 @@ with tab_spectrum:
             unsafe_allow_html=True,
         )
 
-        df, loc, drn = get_filtered_df("spec")
+        df, loc, drn = get_filtered_df()
         if df is None or df.empty:
             st.warning("No data after applying filters.")
         else:
@@ -810,7 +907,7 @@ with tab_pci:
             unsafe_allow_html=True,
         )
 
-        df, loc, drn = get_filtered_df("pci")
+        df, loc, drn = get_filtered_df()
         if df is None or df.empty:
             st.warning("No data after applying filters.")
         else:
@@ -948,6 +1045,19 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
+        st.markdown("### 📄 PDF Report")
+
+        pdf_buf = build_pdf_report(project_name, project_location)
+        if pdf_buf is None:
+            st.info("Run VDF and PCI analysis first to enable PDF export.")
+        else:
+            st.download_button(
+                label="📄 Download PDF Report",
+                data=pdf_buf,
+                file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                mime="application/pdf",
+            )
+
 
 
 
