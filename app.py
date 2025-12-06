@@ -31,113 +31,123 @@ st.markdown(
     """
 <style>
     :root {
-        --primary-color: #667eea;
-        --secondary-color: #764ba2;
+        --primary-color: #4f46e5;
+        --secondary-color: #7c3aed;
         --accent-color: #10b981;
         --warning-color: #f97316;
         --danger-color: #dc2626;
     }
 
-    /* Keep background close to Streamlit default but with subtle gradient */
+    /* Neutral dark grey – not pure black, not bright */
     .main {
-        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 40%, #d1d5db 100%);
+        background: #111827;
         padding: 20px;
+        color: #e5e7eb;
     }
 
-    /* Let body and base text follow app theme (do not force white) */
-    body, .stMarkdown, .stText, .stSelectbox, .stSlider, .stDataFrame {
-        color: inherit !important;
+    body {
+        background-color: #020617;
     }
 
-    /* Metric cards: neutral background, dark text so they work in both themes */
+    /* Let widgets inherit, only enforce contrast where needed */
+    .stMarkdown, .stText, .stDataFrame {
+        color: #e5e7eb !important;
+    }
+
     .stMetric {
-        background: #ffffff;
+        background: #020617;
         padding: 15px;
         border-radius: 10px;
-        border-left: 4px solid #667eea;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-        color: #111827 !important;
+        border-left: 4px solid #4f46e5;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.7);
+        color: #f9fafb !important;
     }
     .stMetric > div {
-        color: #111827 !important;
+        color: #f9fafb !important;
     }
 
     .report-header {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 45%, #0ea5e9 100%);
+        background: linear-gradient(135deg, #1f2937 0%, #4f46e5 45%, #7c3aed 80%);
         color: #f9fafb;
-        padding: 30px;
-        border-radius: 15px;
-        margin-bottom: 20px;
-        box-shadow: 0 14px 30px rgba(15,23,42,0.45);
+        padding: 26px 30px;
+        border-radius: 14px;
+        margin-bottom: 18px;
+        box-shadow: 0 18px 40px rgba(0,0,0,0.8);
     }
     .report-header h1 {
         color: #f9fafb;
     }
     .report-header p {
         color: #e5e7eb;
-        opacity: 1.0;
+        opacity: 0.9;
     }
 
     .section-header {
-        border-bottom: 3px solid #667eea;
-        padding-bottom: 10px;
-        margin: 20px 0 15px 0;
+        border-bottom: 2px solid #4f46e5;
+        padding-bottom: 8px;
+        margin: 18px 0 12px 0;
         font-weight: 600;
-        font-size: 1.3em;
-        color: #111827;
+        font-size: 1.2em;
+        color: #e5e7eb;
     }
 
     .info-box {
-        background: #eff6ff;
-        border-left: 4px solid #3b82f6;
-        padding: 15px;
+        background: #020617;
+        border-left: 3px solid #3b82f6;
+        padding: 12px 14px;
         border-radius: 8px;
-        margin: 10px 0;
-        color: #1e3a8a;
+        margin: 8px 0;
+        color: #e5e7eb;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.6);
     }
 
     .success-box {
-        background: #ecfdf3;
-        border-left: 4px solid #22c55e;
-        padding: 15px;
+        background: #022c22;
+        border-left: 3px solid #22c55e;
+        padding: 12px 14px;
         border-radius: 8px;
-        margin: 10px 0;
-        color: #166534;
+        margin: 8px 0;
+        color: #bbf7d0;
     }
 
     .warning-box {
-        background: #fef3c7;
-        border-left: 4px solid #f97316;
-        padding: 15px;
+        background: #451a03;
+        border-left: 3px solid #f97316;
+        padding: 12px 14px;
         border-radius: 8px;
-        margin: 10px 0;
-        color: #92400e;
+        margin: 8px 0;
+        color: #fed7aa;
     }
 
     .data-table {
-        background: #ffffff;
+        background: #020617;
         border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-        color: #111827;
+        padding: 12px 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.75);
+        color: #e5e7eb;
     }
 
     section[data-testid="stSidebar"] {
-        background: #f9fafb;
-        color: #111827;
+        background: #020617;
+        color: #e5e7eb;
     }
     section[data-testid="stSidebar"] * {
-        color: #111827 !important;
+        color: #e5e7eb !important;
     }
 
+    /* Tabs and buttons subtle */
     button[data-baseweb="tab"] > div {
-        color: #111827 !important;
+        color: #e5e7eb !important;
+    }
+    button[kind="secondary"] {
+        background-color: #1f2937 !important;
+        color: #e5e7eb !important;
+        border-color: #374151 !important;
     }
 </style>
 """,
     unsafe_allow_html=True,
 )
-
 
 # ============================================================================
 # CONFIGURATION
@@ -1055,6 +1065,7 @@ with tab_export:
                 file_name=f"{project_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                 mime="application/pdf",
             )
+
 
 
 
